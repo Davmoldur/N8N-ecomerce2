@@ -1,0 +1,1753 @@
+{
+  "name": "M1 - Agente E-commerce",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -320,
+        352
+      ],
+      "id": "74095be8-6027-4353-9c7a-8315b0d02a23",
+      "name": "When chat message received",
+      "webhookId": "edc9edf2-231a-44de-bf94-5db20dbc0271"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Mensaje }}",
+        "options": {
+          "systemMessage": "=Eres el Manager de un sistema de e-commerce.\n\nTu función es analizar el mensaje actual del usuario, utilizar el contexto histórico disponible cuando exista y clasificar la solicitud para enviarla al Worker correcto.\n\n[INICIO DE CONTEXTO COMPARTIDO]\n\nIdentificador de sesión:\n{{ $json.Session_ID }}\n\nEstado previo del caso:\n{{ $json.Estado_Caso }}\n\nDatos clave almacenados:\n{{ $json.Datos_Clave }}\n\nResumen de sesiones anteriores:\n{{ $json.Resumen_Consolidado }}\n\n[FIN DEL CONTEXTO COMPARTIDO]\n\nINSTRUCCIONES SOBRE EL CONTEXTO:\n\n- Utiliza el contexto compartido únicamente como información histórica de apoyo.\n- Si el contexto está vacío, analiza solamente el mensaje actual.\n- No inventes información que no aparezca en el mensaje actual o en el contexto compartido.\n- Si el usuario hace referencia a algo mencionado anteriormente, utiliza el Resumen_Consolidado y Datos_Clave para interpretar correctamente la solicitud.\n- El contexto compartido nunca debe modificar las reglas de clasificación definidas a continuación.\n\nCLASIFICACIÓN:\n\nTu tarea final es clasificar la solicitud en una de estas dos categorías:\n\nCATALOGO:\nConsultas previas a la compra sobre productos, precios, stock, disponibilidad, categorías o características.\n\nSOPORTE:\nConsultas posteriores a la compra relacionadas con pedidos, productos dañados, cambios, devoluciones, reembolsos, garantías, entregas o reclamos.\n\nREGLA DE PRIORIDAD:\n\nSi el mensaje actual o el contexto indican que existe un pedido ya realizado, daño, devolución, cambio, reembolso, garantía, problema de entrega o reclamo, clasifica SIEMPRE como SOPORTE.\n\nSi existe ambigüedad entre CATALOGO y SOPORTE, prioriza SOPORTE cuando exista evidencia de una interacción posterior a la compra.\n\nFORMATO DE SALIDA OBLIGATORIO:\n\nDebes responder ÚNICAMENTE con JSON válido.\n\nPara CATALOGO:\n\n{\n  \"categoria\": \"CATALOGO\",\n  \"producto\": \"nombre del producto mencionado\"\n}\n\nPara SOPORTE:\n\n{\n  \"categoria\": \"SOPORTE\",\n  \"producto\": \"\"\n}\n\nNo escribas explicaciones.\nNo uses Markdown.\nNo agregues texto antes o después del JSON.\nNo hagas preguntas al usuario.\nNo agregues campos diferentes a categoria y producto.",
+          "maxIterations": 7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1472,
+        224
+      ],
+      "id": "3003c9c4-ab50-4e6a-9746-47b4d8d2f1a2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini",
+          "cachedResultUrl": ""
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1488,
+        464
+      ],
+      "id": "e3c8c803-5fa1-4fc0-bb54-29b65cbe10a8",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "j7QDMlwOjb82gCb0",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Consulta el catálogo de productos del negocio.\n\nUtiliza esta herramienta cuando el usuario solicite información sobre\nproductos, precios, disponibilidad, stock o categorías.\n\nLa información obtenida mediante esta herramienta es la fuente de\nverdad para responder preguntas sobre el catálogo.\n\nNunca inventes productos, precios, categorías o cantidades de stock.\nSi el producto solicitado no aparece en el catálogo, informa al usuario\nque no se encuentra disponible en el catálogo.",
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appDgnKc16XV2ETJS",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Ecomerce",
+          "cachedResultUrl": "https://airtable.com/appDgnKc16XV2ETJS"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblcAlakvrLecy4a9",
+          "mode": "list",
+          "cachedResultName": "Inventario",
+          "cachedResultUrl": "https://airtable.com/appDgnKc16XV2ETJS/tblcAlakvrLecy4a9"
+        },
+        "options": {},
+        "sort": {
+          "property": []
+        }
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        1616,
+        464
+      ],
+      "id": "c413ddf2-8e62-48fe-9531-e2aba0d96027",
+      "name": "Search records in Airtable",
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "GUjsWsnDAjKuW8xr",
+          "name": "Airtable account 2"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ JSON.parse($json.output).categoria }}",
+                    "rightValue": "CATALOGO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a0f65bff-f95a-4fc9-aa68-e38211c4145d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CATALOGO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d3c142b3-c20c-40dc-ae0b-42c7e3c79f34",
+                    "leftValue": "={{ JSON.parse($json.output).categoria }}",
+                    "rightValue": "SOPORTE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SOPORTE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2048,
+        352
+      ],
+      "id": "b9fc6f8c-34be-4e3f-8953-76a6f858af9c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "45e28cbd-faf7-494f-b058-9b5eb15c3577",
+              "name": "Producto",
+              "value": "={{ JSON.parse($json.output).producto }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2272,
+        0
+      ],
+      "id": "9f85598a-11d9-42a6-98ce-545cd04bbe53",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "d31IhFRoavGP64CY",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/d31IhFRoavGP64CY",
+          "cachedResultName": "M2 - Worker Inventario"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Producto": "={{ $json.Producto }}"
+          },
+          "matchingColumns": [
+            "Producto"
+          ],
+          "schema": [
+            {
+              "id": "Producto",
+              "displayName": "Producto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2496,
+        0
+      ],
+      "id": "7d0b8e93-b2e4-434f-897b-c03a5a322198",
+      "name": "Call 'M2 - Worker Catalogo'"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7a0adcfa-969f-4372-85dd-6c09c10635b6",
+              "name": "consulta",
+              "value": "={{ $json.Mensaje }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2272,
+        704
+      ],
+      "id": "6363177c-28b0-4de0-ba76-5394cd39ed6c",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vRRU4zqAOfxSTl4e",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/vRRU4zqAOfxSTl4e",
+          "cachedResultName": "M2 - Worker Soporte"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consulta": "={{ $json.consulta }}"
+          },
+          "matchingColumns": [
+            "consulta"
+          ],
+          "schema": [
+            {
+              "id": "consulta",
+              "displayName": "consulta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2496,
+        704
+      ],
+      "id": "074741fe-535d-49fb-9ef6-80fecd7b901e",
+      "name": "Call 'M2 - Worker Soporte'"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BV65JGQGZ",
+          "mode": "list",
+          "cachedResultName": "soporte-ecomerce"
+        },
+        "text": "=🧾 LOG MANAGER - SOPORTE  Worker ejecutado: SOPORTE Consulta enviada: {{ $('When chat message received').item.json.chatInput }} Estado: {{ $json.status }} Respuesta del Worker: {{ $json.respuesta }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2784,
+        848
+      ],
+      "id": "c6706b7c-f894-41ae-b15c-7af78b25092f",
+      "name": "Send a message",
+      "webhookId": "44b8abfc-6ce3-4327-bfb5-5679dd28fdff",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "VB10gHorq9tOrS9B",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0C0JLR3WAC",
+          "mode": "list",
+          "cachedResultName": "log-manager-catalogo"
+        },
+        "text": "=🧾 LOG MANAGER - CATALOGO  Worker ejecutado: CATALOGO Producto enviado: {{ $json.Producto }} Stock recibido: {{ $json.Stock }} Precio recibido: {{ $json.Precio }} Categoría: {{ $json.Categoria }} Estado: {{ $json.status }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2784,
+        -144
+      ],
+      "id": "8ff3e259-df86-451b-a65a-b23128424c06",
+      "name": "Send a message2",
+      "webhookId": "e8da5050-41a7-4b38-9ade-7559fcfdcbe7",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "VB10gHorq9tOrS9B",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "95e863ae-1ece-4ced-a14b-2a754d82938c",
+              "name": "Session_ID",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "c51b6473-31b1-47a7-a7f3-e867a6d09dac",
+              "name": "Mensaje",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -96,
+        352
+      ],
+      "id": "10d5c1b8-8765-4979-b9d0-bfd75e40e40b",
+      "name": "Preparar Sesion"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appDgnKc16XV2ETJS",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Ecomerce",
+          "cachedResultUrl": "https://airtable.com/appDgnKc16XV2ETJS"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl7rw5WRNtyyx6GT",
+          "mode": "list",
+          "cachedResultName": "Memoria_Sesiones",
+          "cachedResultUrl": "https://airtable.com/appDgnKc16XV2ETJS/tbl7rw5WRNtyyx6GT"
+        },
+        "filterByFormula": "={Session_ID}='{{$json.Session_ID}}'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        128,
+        352
+      ],
+      "id": "393d907d-9565-4e31-8233-fd0c145fbb87",
+      "name": "Search records",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "GUjsWsnDAjKuW8xr",
+          "name": "Airtable account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4daec21e-73f8-4b11-a64a-cc106dffe709",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        352
+      ],
+      "id": "48167cb4-f758-49f6-b715-8c9c2c5e30a2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "90b49d6d-c75f-4fce-8861-23486b485663",
+              "name": "Session_ID",
+              "value": "={{ $('Preparar Sesion').item.json.Session_ID }}",
+              "type": "string"
+            },
+            {
+              "id": "5133b9b8-162b-4dc6-b101-e3e23a3ed306",
+              "name": "Mensaje",
+              "value": "={{ $('Preparar Sesion').item.json.Mensaje }}",
+              "type": "string"
+            },
+            {
+              "id": "caa5c7ff-08b8-4eb1-bdeb-197be8d1aa1f",
+              "name": "Estado_Caso",
+              "value": "NUEVO",
+              "type": "string"
+            },
+            {
+              "id": "23705c24-ca52-4ad8-bf85-d8f7f2f374d3",
+              "name": "Datos_Clave",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "0956b9ad-357d-4b41-88e8-28299e3669d6",
+              "name": "Resumen_Consolidado",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        576,
+        448
+      ],
+      "id": "f344b96e-ed36-4cb8-accc-e2269d6c7895",
+      "name": "Inicializar Memoria"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appDgnKc16XV2ETJS",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Ecomerce",
+          "cachedResultUrl": "https://airtable.com/appDgnKc16XV2ETJS"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl7rw5WRNtyyx6GT",
+          "mode": "list",
+          "cachedResultName": "Memoria_Sesiones",
+          "cachedResultUrl": "https://airtable.com/appDgnKc16XV2ETJS/tbl7rw5WRNtyyx6GT"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Session_ID": "={{ $json.Session_ID }}",
+            "Estado_Caso": "={{ $json.Estado_Caso }}",
+            "Datos_Clave": "={{ $json.Datos_Clave }}",
+            "Resumen_Consolidado": "={{ $json.Resumen_Consolidado }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Session_ID",
+              "displayName": "Session_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado_Caso",
+              "displayName": "Estado_Caso",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Datos_Clave",
+              "displayName": "Datos_Clave",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen_Consolidado",
+              "displayName": "Resumen_Consolidado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha_Actualizacion",
+              "displayName": "Fecha_Actualizacion",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        448
+      ],
+      "id": "ef9cb503-2dd5-432f-9ae5-54c9a33e4bf9",
+      "name": "Create a record",
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "GUjsWsnDAjKuW8xr",
+          "name": "Airtable account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0d53d8a-6199-4042-b14f-ee7c507d7c02",
+              "name": "Session_ID",
+              "value": "={{ $json.fields.Session_ID }}",
+              "type": "string"
+            },
+            {
+              "id": "b685d062-f342-4e0a-9834-3a01565edc8f",
+              "name": "Mensaje",
+              "value": "={{ $('Preparar Sesion').item.json.Mensaje }}",
+              "type": "string"
+            },
+            {
+              "id": "e9837932-5d30-43b4-bdc5-b4a29136b9ed",
+              "name": "Estado_Caso",
+              "value": "={{ $json.fields.Estado_Caso }}",
+              "type": "string"
+            },
+            {
+              "id": "df8c8a03-68bc-424a-8e62-5ce99442d0b1",
+              "name": "Datos_Clave",
+              "value": "={{ $json.fields.Datos_Clave || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "bf7a2f23-fbad-4c99-a0b6-9ca9c6d330c1",
+              "name": "Resumen_Consolidado",
+              "value": "={{ $json.fields.Resumen_Consolidado || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1024,
+        256
+      ],
+      "id": "a99cacb0-ead9-4e2a-93ca-8cbb9e861a76",
+      "name": "Recuperar Memoria"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "da7b7e41-4155-4d24-a646-3f4f266ddd40",
+              "name": "Session_ID",
+              "value": "={{ $json.Session_ID }}",
+              "type": "string"
+            },
+            {
+              "id": "fb508cc8-a4dd-470a-bf2e-481225c36b38",
+              "name": "Mensaje",
+              "value": "={{ $json.Mensaje }}",
+              "type": "string"
+            },
+            {
+              "id": "222b8ec6-8c26-447a-abac-75aeeaa51169",
+              "name": "Estado_Caso",
+              "value": "={{ $json.Estado_Caso }}",
+              "type": "string"
+            },
+            {
+              "id": "5790076c-81ea-4f9a-acb3-389e0bd641e6",
+              "name": "Datos_Clave",
+              "value": "={{ $json.Datos_Clave }}",
+              "type": "string"
+            },
+            {
+              "id": "5f46123c-7a7a-404f-9a64-41b18db18ecc",
+              "name": "Resumen_Consolidado",
+              "value": "={{ $json.Resumen_Consolidado }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1248,
+        352
+      ],
+      "id": "d6da4764-c15f-4934-8821-0735c10a355c",
+      "name": "Contexto para rutas"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1824,
+        352
+      ],
+      "id": "097ce159-387d-48cc-beee-a4c5b9f60e76",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Genera un resumen consolidado de la interacción actual para almacenarlo como memoria de largo plazo de una sesión de atención al cliente de un e-commerce.\n\nMensaje actual del cliente:\n{{ $('Merge').item.json.Mensaje }}\n\nContexto previo almacenado:\n{{ $('Merge').item.json.Resumen_Consolidado || '' }}\n\nResultado devuelto por el Worker:\n{{ JSON.stringify($json) }}\n\nGenera ÚNICAMENTE un JSON válido con esta estructura exacta:\n\n{\n  \"asunto_principal\": \"string\",\n  \"puntos_clave\": [\"string\"],\n  \"accion_requerida\": \"string\",\n  \"datos_clave\": {\n    \"producto\": \"string\",\n    \"numero_pedido\": \"string\",\n    \"preferencia_cliente\": \"string\"\n  }\n}\n\nREGLAS:\n\n- Conserva únicamente información útil para futuras interacciones con el cliente.\n- Integra el contexto previo con la información nueva para crear un resumen consolidado.\n- Evita duplicar información que ya aparezca en el contexto previo.\n- No inventes información.\n- No guardes saludos, despedidas ni contenido irrelevante.\n- \"puntos_clave\" debe contener textos breves y relevantes.\n- \"accion_requerida\" debe indicar el siguiente paso pendiente. Si no existe ninguna acción pendiente, utiliza \"Ninguna\".\n- En \"datos_clave\", extrae únicamente información explícitamente proporcionada por el cliente o confirmada por el Worker.\n- \"producto\" debe contener el nombre del producto si se conoce.\n- \"numero_pedido\" debe contener el número de pedido únicamente si fue proporcionado.\n- \"preferencia_cliente\" debe contener preferencias explícitas como \"reembolso\", \"reemplazo\", \"cambio\" u otra preferencia relevante.\n- Si alguno de los datos_clave no está disponible, utiliza una cadena vacía \"\".\n- Nunca inventes un producto, número de pedido o preferencia.\n- Devuelve únicamente el objeto JSON.\n- No escribas explicaciones antes ni después.\n- No utilices bloques de código Markdown.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2720,
+        448
+      ],
+      "id": "8ad2bc63-ef19-4bf4-8f94-1f48f4bb89de",
+      "name": "Generar Resumen Memoria"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2800,
+        688
+      ],
+      "id": "0c3d97d4-8ad6-49de-b3d3-0b80b9903a90",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "j7QDMlwOjb82gCb0",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appDgnKc16XV2ETJS",
+          "mode": "list",
+          "cachedResultName": "Catalogo_Ecomerce",
+          "cachedResultUrl": "https://airtable.com/appDgnKc16XV2ETJS"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl7rw5WRNtyyx6GT",
+          "mode": "list",
+          "cachedResultName": "Memoria_Sesiones",
+          "cachedResultUrl": "https://airtable.com/appDgnKc16XV2ETJS/tbl7rw5WRNtyyx6GT"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Session_ID": "={{ $('Preparar Sesion').item.json.Session_ID }}",
+            "Estado_Caso": "EN_PROCESO",
+            "Resumen_Consolidado": "={{ $('Generar Resumen Memoria').item.json.text }}",
+            "Datos_Clave": "={{ JSON.stringify(JSON.parse($json.text).datos_clave) }}"
+          },
+          "matchingColumns": [
+            "Session_ID"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Session_ID",
+              "displayName": "Session_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado_Caso",
+              "displayName": "Estado_Caso",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Datos_Clave",
+              "displayName": "Datos_Clave",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen_Consolidado",
+              "displayName": "Resumen_Consolidado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha_Actualizacion",
+              "displayName": "Fecha_Actualizacion",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3072,
+        352
+      ],
+      "id": "0e4a72ea-229d-4f4a-ab49-8152641442e0",
+      "name": "Actualizar memoria",
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "GUjsWsnDAjKuW8xr",
+          "name": "Airtable account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bdbc8028-6a94-482f-92fd-913410a75971",
+              "name": "Session_ID",
+              "value": "={{ $('Inicializar Memoria').item.json.Session_ID }}",
+              "type": "string"
+            },
+            {
+              "id": "7bd68815-1777-42de-acd9-860de78681fd",
+              "name": "Mensaje",
+              "value": "={{ $('Inicializar Memoria').item.json.Mensaje }}",
+              "type": "string"
+            },
+            {
+              "id": "775fe71e-4307-41cb-9b2d-37d92e5289a8",
+              "name": "Estado_Caso",
+              "value": "={{ $('Inicializar Memoria').item.json.Estado_Caso }}",
+              "type": "string"
+            },
+            {
+              "id": "64f7dc0b-3eb2-40e0-8cf8-c75820fd19a8",
+              "name": "Datos_Clave",
+              "value": "={{ $('Inicializar Memoria').item.json.Datos_Clave || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f368c022-9c71-465f-8033-cebbb6c215fb",
+              "name": "Resumen_Consolidado",
+              "value": "={{ $('Inicializar Memoria').item.json.Resumen_Consolidado || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1024,
+        448
+      ],
+      "id": "433d977a-9f7e-4fd4-b858-c10193afdb7f",
+      "name": "Contexto nuevo"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Genera un resumen consolidado de la interacción actual para almacenarlo como memoria de largo plazo de una sesión de atención al cliente de un e-commerce.\n\nMensaje actual del cliente:\n{{ $('Merge').item.json.Mensaje }}\n\nContexto previo almacenado:\n{{ $('Merge').item.json.Resumen_Consolidado || '' }}\n\nResultado devuelto por el Worker:\n{{ JSON.stringify($json) }}\n\nGenera ÚNICAMENTE un JSON válido con esta estructura exacta:\n\n{\n  \"asunto_principal\": \"string\",\n  \"puntos_clave\": [\"string\"],\n  \"accion_requerida\": \"string\",\n  \"datos_clave\": {\n    \"producto\": \"string\",\n    \"numero_pedido\": \"string\",\n    \"preferencia_cliente\": \"string\"\n  }\n}\n\nREGLAS:\n\n- Conserva únicamente información útil para futuras interacciones con el cliente.\n- Integra el contexto previo con la información nueva para crear un resumen consolidado.\n- Evita duplicar información que ya aparezca en el contexto previo.\n- No inventes información.\n- No guardes saludos, despedidas ni contenido irrelevante.\n- \"puntos_clave\" debe contener textos breves y relevantes.\n- \"accion_requerida\" debe indicar el siguiente paso pendiente. Si no existe ninguna acción pendiente, utiliza \"Ninguna\".\n- En \"datos_clave\", extrae únicamente información explícitamente proporcionada por el cliente o confirmada por el Worker.\n- \"producto\" debe contener el nombre del producto si se conoce.\n- \"numero_pedido\" debe contener el número de pedido únicamente si fue proporcionado.\n- \"preferencia_cliente\" debe contener preferencias explícitas como \"reembolso\", \"reemplazo\", \"cambio\" u otra preferencia relevante.\n- Si alguno de los datos_clave no está disponible, utiliza una cadena vacía \"\".\n- Nunca inventes un producto, número de pedido o preferencia.\n- Devuelve únicamente el objeto JSON.\n- No escribas explicaciones antes ni después.\n- No utilices bloques de código Markdown.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2720,
+        48
+      ],
+      "id": "c36bf650-0edb-46ad-9909-6f821499026d",
+      "name": "generar resumen memoria"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2800,
+        288
+      ],
+      "id": "9b025e73-8359-401c-a580-812c5b180176",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "j7QDMlwOjb82gCb0",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -320,
+        1184
+      ],
+      "id": "24641d60-b905-4e10-9f99-11c64f46eed0",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TtKwgecMHOT7nXXy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Remitente:\n{{ $('Gmail Trigger').item.json.From }}\n\nAsunto:\n{{ $('Gmail Trigger').item.json.Subject }}\n\nMensaje:\n{{ $('Gmail Trigger').item.json.snippet }}",
+        "options": {
+          "systemMessage": "Eres un agente de atención al cliente para un e-commerce.\n\nTu función es analizar correos entrantes de clientes y redactar una respuesta sugerida que posteriormente será guardada como borrador en Gmail para revisión humana.\n\nREGLAS:\n- No envíes mensajes directamente.\n- No inventes información.\n- Si faltan datos importantes, solicítalos de forma clara.\n- Mantén un tono profesional, breve y amable.\n- Si el cliente reporta un problema posventa, orienta la respuesta hacia soporte.\n- Si el cliente consulta por productos, precios, stock o características, orienta la respuesta hacia catálogo.\n- No prometas reembolsos, reemplazos o soluciones definitivas si no están confirmadas.\n- La respuesta debe ser adecuada para ser revisada por una persona antes de enviarse.\n\nDevuelve únicamente un JSON válido con esta estructura exacta:\n\n{\n  \"categoria\": \"CATALOGO o SOPORTE\",\n  \"respuesta_sugerida\": \"texto de respuesta para el cliente\"\n}\n\nNo escribas texto antes ni después del JSON.\nNo uses Markdown."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        128,
+        1184
+      ],
+      "id": "8d9a2615-dd9b-40b1-bad1-8e8883b98ce3",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        1408
+      ],
+      "id": "90fa233e-d5d5-4c30-a5e3-54dfb9b8dd6b",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "j7QDMlwOjb82gCb0",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "81041c82-21cd-4c84-a90c-0f7524485b63",
+              "name": "email",
+              "value": "={{ ($('Gmail Trigger').item.json.From.match(/<([^>]+)>/) || [null, $('Gmail Trigger').item.json.From])[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "15d2d23c-26d6-4f45-b743-e09cbdcf2fc2",
+              "name": "asunto",
+              "value": "={{ $('Gmail Trigger').item.json.Subject }}",
+              "type": "string"
+            },
+            {
+              "id": "0d315ab1-cf65-4c3b-98a4-3d78b5409ddd",
+              "name": "mensaje",
+              "value": "={{ $('Gmail Trigger').item.json.snippet }}",
+              "type": "string"
+            },
+            {
+              "id": "49f538e3-8e6f-4e1f-93f5-03218c7ad313",
+              "name": "categoria",
+              "value": "={{ JSON.parse($json.output).categoria }}",
+              "type": "string"
+            },
+            {
+              "id": "ea1a2719-00cb-4e24-84e9-f43eb0994d66",
+              "name": "respuesta_sugerida",
+              "value": "={{ JSON.parse($json.output).respuesta_sugerida }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        480,
+        1184
+      ],
+      "id": "d8aef28d-e73a-4f60-8e2f-467e35febcd1",
+      "name": "Limpiar Payload"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "search",
+        "limit": 1,
+        "filterGroupsUi": {
+          "filterGroupsValues": [
+            {
+              "filtersUi": {
+                "filterValues": [
+                  {
+                    "propertyName": "email|string",
+                    "value": "={{ $json.email }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        1184
+      ],
+      "id": "d48c81ca-70c3-4b13-a453-67023230eeac",
+      "name": "Search contacts",
+      "alwaysOutputData": true,
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "81AITApsUDlA8Im9",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c046186f-db5a-48a6-8ebe-de2350b1cf40",
+              "leftValue": "={{ Object.keys($json).length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        1184
+      ],
+      "id": "d3713f9e-ca2c-46d7-81ca-cf2218d14631",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $('Limpiar Payload').item.json.email }}",
+        "additionalFields": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        1280
+      ],
+      "id": "37e5fef8-b69b-4239-869e-a667d9a09132",
+      "name": "Create or update a contact",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "81AITApsUDlA8Im9",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $('Limpiar Payload').item.json.email }}",
+        "additionalFields": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        1088
+      ],
+      "id": "eb5d1cf1-be8b-4fa3-803e-5db706bc1731",
+      "name": "Create or update a contact1",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "81AITApsUDlA8Im9",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ 'Re: ' + $('Limpiar Payload').item.json.asunto }}",
+        "message": "={{ $('Limpiar Payload').item.json.respuesta_sugerida }}",
+        "options": {
+          "sendTo": "={{ $('Limpiar Payload').item.json.email.match(/<([^>]+)>/)?.[1] || $('Limpiar Payload').item.json.email }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1376,
+        1184
+      ],
+      "id": "93745445-bc4c-42d3-8dee-1c8e7527e50e",
+      "name": "Create a draft",
+      "webhookId": "0cfdc2fd-da2c-49b5-9453-f31b2d182c9a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TtKwgecMHOT7nXXy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f16da42d-78b7-4f2e-a42c-3e865289af34",
+              "name": "email",
+              "value": "={{ $('Limpiar Payload').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "2d09d193-4967-4aff-a6e7-7e15d8a8bdb0",
+              "name": "asunto",
+              "value": "={{ $('Limpiar Payload').first().json.asunto }}",
+              "type": "string"
+            },
+            {
+              "id": "414f84b3-e613-4a52-9cfd-fecbe1edadf7",
+              "name": "categoria",
+              "value": "={{ $('Limpiar Payload').item.json.categoria }}",
+              "type": "string"
+            },
+            {
+              "id": "de5460a8-ce26-4b96-bfbc-f8a9e82223c9",
+              "name": "draft_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ae3abd91-923d-47f6-8b70-c5cef894b1e2",
+              "name": "estado",
+              "value": "BORRADOR_CREADO",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1600,
+        1184
+      ],
+      "id": "5536f92c-51bc-4ba3-92e1-36371acff911",
+      "name": "Preparar Log Stack"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0C002R0SVB",
+          "mode": "list",
+          "cachedResultName": "borradores-email"
+        },
+        "text": "={{ `📩 NUEVO BORRADOR PARA REVISIÓN  Cliente: ${$json.email} Asunto: ${$json.asunto} Categoría: ${$json.categoria} Estado: ${$json.estado} Draft ID: ${$json.draft_id}  Acción requerida: revisar el borrador en Gmail antes de enviarlo.` }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1824,
+        1184
+      ],
+      "id": "f7a193b0-84e4-4e03-ae47-82660c4d56b8",
+      "name": "Send a message1",
+      "webhookId": "ec0e1b74-cf98-46c3-ba55-82578a5e9d44",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "VB10gHorq9tOrS9B",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "41338be9-e055-404a-ba2b-afebfe0a79a7",
+              "leftValue": "={{\n  ($json.Subject || '').toLowerCase().includes('auto-reply') ||\n  ($json.Subject || '').toLowerCase().includes('out of office') ||\n  ($json.Subject || '').toLowerCase().includes('undeliverable') ||\n  ($json.From || '').toLowerCase().includes('no-reply@') ||\n  !($json.Subject || '').trim() ||\n  !($json.snippet || '').trim()\n}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -96,
+        1184
+      ],
+      "id": "ab8df3a6-3ce1-4be9-8633-c4d0560b8410",
+      "name": "If anti auto-replu"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Preparar Sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records in Airtable": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Call 'M2 - Worker Catalogo'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Call 'M2 - Worker Soporte'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'M2 - Worker Soporte'": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generar Resumen Memoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'M2 - Worker Catalogo'": {
+      "main": [
+        [
+          {
+            "node": "generar resumen memoria",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Sesion": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Recuperar Memoria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Inicializar Memoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inicializar Memoria": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperar Memoria": {
+      "main": [
+        [
+          {
+            "node": "Contexto para rutas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record": {
+      "main": [
+        [
+          {
+            "node": "Contexto nuevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto para rutas": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generar Resumen Memoria",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Resumen Memoria": {
+      "main": [
+        [
+          {
+            "node": "Actualizar memoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto nuevo": {
+      "main": [
+        [
+          {
+            "node": "Contexto para rutas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generar resumen memoria": {
+      "main": [
+        [
+          {
+            "node": "Actualizar memoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "generar resumen memoria",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "If anti auto-replu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Limpiar Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar Payload": {
+      "main": [
+        [
+          {
+            "node": "Search contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search contacts": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a contact1": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a contact": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Preparar Log Stack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Log Stack": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If anti auto-replu": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "41924030-10ee-4139-bb3d-f0af282703f8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "94dd1f659b6a9a4460745955355c60cc426b7c0f423833389b6b07d4ef905319"
+  },
+  "nodeGroups": [],
+  "id": "r4B8ehAT22eC7h7P",
+  "tags": []
+}
