@@ -237,7 +237,7 @@ El resultado es un workflow capaz de recibir solicitudes por correo, analizarlas
 ## Captura del workflow
 
 <img width="2557" height="1321" alt="Captura de pantalla 2026-09-07 a la(s) 11 54 24 a m" src="https://github.com/user-attachments/assets/f4543104-1149-4d41-9f3d-03b7b5e09fd6" />
-<img width="2557" height="1321" alt="Captura de pantalla 2026-09-07 a la(s) 11 54 24 a m" src="https://github.com/user-attachments/assets/6a83504f-dbca-4d08-83e6-d87c32352466" />
+<img width="2566" height="1337" alt="Captura de pantalla 2026-09-07 a la(s) 11 54 14 a m" src="https://github.com/user-attachments/assets/9f9682e0-d5dd-4bbb-bdc8-f58c6ee839d7" />
 <img width="2537" height="1302" alt="Captura de pantalla 2026-09-07 a la(s) 11 53 58 a m" src="https://github.com/user-attachments/assets/2f225c0c-13e1-4b65-880a-484ac41bd7b8" />
 
 
